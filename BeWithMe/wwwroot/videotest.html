@@ -1,0 +1,212 @@
+﻿<!--<!DOCTYPE html>
+<html>
+<head>
+    <title>Twilio Video Test</title>
+    <script src="https://sdk.twilio.com/js/video/releases/2.26.0/twilio-video.min.js"></script>
+</head>
+<body>
+    <h1>Twilio Video Test</h1>
+    <div>
+        <label for="identity">Identity:</label>
+        <input id="identity" type="text" value="1008" />
+        <button onclick="getToken()">Join Room</button>
+    </div>
+    <div id="room-controls" style="display:none;">
+        <button id="leave-room">Leave Room</button>
+    </div>
+    <div id="local-media"></div>
+    <div id="remote-media"></div>
+
+    <script>
+        async function getToken() {
+
+            const identity = document.getElementById('identity').value;
+            console.log("hi")
+            const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3MWYyZjkyNy0wZTEwLTQ5ZWEtYjhmNC0yNmQ3ZjZkY2Q5OGYiLCJlbWFpbCI6InBhdGllbnQxQGV4YW1wbGUuY29tIiwianRpIjoiYmFhZTRiMzktYmRkZS00MmFjLTllNTYtZjZhOWM1NTRmOGFmIiwiaWF0IjoxNzQ1NDEwMzE1LCJyb2xlIjoicGF0aWVudCIsIm5iZiI6MTc0NTQxMDMxNSwiZXhwIjoxNzQ1NDEzOTE1LCJpc3MiOiJBc3AubmV0IiwiYXVkIjoiRmx1dHRlckhvc3NhbURldmVsb3BlciJ9.QwVzKvrigs0VCD_2vZgz_sJA3oY3BmxvQ-epDTZypHU"
+            const response = await fetch(`/api/calls/initiate-call`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    postId: identity,
+                    acceptorId: '57d03b0f-3b9a-4ece-8ddb-9971f6e039d8'
+                })
+            });
+            const data = await response.json();
+            console.log('Token received:', data);
+            //console.log('Token received:', data.accessToken, 'roomname', data.roomName);
+            if (data.accessToken) {
+                console.log("true")
+                connectToRoom(data.accessToken, date.roomName);
+            } else {
+                alert("Failed to initiate call: " + data.message);
+            }
+        }
+
+        async function connectToRoom(token, roomName) {
+            console.log('before try')
+            try {
+                const room = await Twilio.Video.connect(token, {
+                    audio: true,
+                    video: true,
+                    name: roomName
+                });
+                console.log('after room')
+                console.log('Connected to room:', room.name);
+                document.getElementById('room-controls').style.display = 'block';
+
+                // Display local video
+                room.localParticipant.tracks.forEach(publication => {
+                    if (publication.track) {
+                        document.getElementById('local-media').appendChild(publication.track.attach());
+                    }
+                });
+
+                // Handle remote participants
+                room.participants.forEach(participant => {
+                    participant.tracks.forEach(publication => {
+                        if (publication.track) {
+                            document.getElementById('remote-media').appendChild(publication.track.attach());
+                        }
+                    });
+                });
+
+                // Handle participants connecting to the room
+                room.on('participantConnected', participant => {
+                    console.log('Participant connected:', participant.identity);
+
+                    participant.tracks.forEach(publication => {
+                        if (publication.track) {
+                            document.getElementById('remote-media').appendChild(publication.track.attach());
+                        }
+                    });
+                });
+
+                // Handle leave room
+                document.getElementById('leave-room').addEventListener('click', () => {
+                    room.disconnect();
+                    document.getElementById('room-controls').style.display = 'none';
+                });
+            } catch (error) {
+                console.error('Error connecting to room:', error);
+            }
+        }
+    </script>
+</body>
+</html>-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Twilio Video Test</title>
+    <script src="https://sdk.twilio.com/js/video/releases/2.26.0/twilio-video.min.js"></script>
+</head>
+<body>
+    <h1>Twilio Video Test</h1>
+    <div>
+        <label for="identity">Identity:</label>
+        <input id="identity" type="text" value="57d03b0f-3b9a-4ece-8ddb-9971f6e039d8" placeholder="Enter Acceptor ID" />
+        <label for="postId">Post ID:</label>
+        <input id="postId" type="number" placeholder="Enter Post ID" value="1008" />
+        <button onclick="initiateCall()">Join Room</button>
+    </div>
+    <div id="room-controls" style="display:none;">
+        <button id="leave-room">Leave Room</button>
+    </div>
+    <div id="local-media"></div>
+    <div id="remote-media"></div>
+
+    <script>
+        const jwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3MWYyZjkyNy0wZTEwLTQ5ZWEtYjhmNC0yNmQ3ZjZkY2Q5OGYiLCJlbWFpbCI6InBhdGllbnQxQGV4YW1wbGUuY29tIiwianRpIjoiMjRlZWMyNTItMjZjOC00MDk4LWE5OWQtYzQ2NjEwN2U4NjZjIiwiaWF0IjoxNzQ1NDIxOTI1LCJyb2xlIjoicGF0aWVudCIsIm5iZiI6MTc0NTQyMTkyNSwiZXhwIjoxNzQ1NDI1NTI1LCJpc3MiOiJBc3AubmV0IiwiYXVkIjoiRmx1dHRlckhvc3NhbURldmVsb3BlciJ9.ZWBNp2E9F4uAlSyBPua7WBfO6Tph6YgSMZQcYoJaB-I";
+
+        async function initiateCall() {
+            const identity = document.getElementById('identity').value;
+            const postId = parseInt(document.getElementById('postId').value);
+
+            if (!identity || isNaN(postId)) {
+                alert("Please enter valid Identity and Post ID");
+                return;
+            }
+
+            try {
+                // Call the backend API to initiate the call
+                const response = await fetch(`/api/calls/initiate-call`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${jwtToken}`
+                    },
+                    body: JSON.stringify({
+                        acceptorId: identity,
+                        postId: postId
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Call initiated:', data);
+                //console.log('Call initiated:', data.accessToken);
+
+                if (data.accessToken) {
+                    connectToRoom(data.accessToken);
+                } else {
+                    alert("Failed to initiate call: " + data.message);
+                }
+            } catch (error) {
+                console.error('Error initiating call:', error);
+                alert("An error occurred while initiating the call.");
+            }
+        }
+
+        async function connectToRoom(token) {
+            try {
+                const room = await Twilio.Video.connect(token, {
+                    audio: true,
+                    video: true,
+                    name: 'testRoom'
+                });
+
+                console.log('Connected to room:', room.name);
+                document.getElementById('room-controls').style.display = 'block';
+
+                // Display local video
+                room.localParticipant.tracks.forEach(publication => {
+                    if (publication.track) {
+                        document.getElementById('local-media').appendChild(publication.track.attach());
+                    }
+                });
+
+                // Handle remote participants
+                room.participants.forEach(participant => {
+                    participant.tracks.forEach(publication => {
+                        if (publication.track) {
+                            document.getElementById('remote-media').appendChild(publication.track.attach());
+                        }
+                    });
+                });
+
+                // Handle participants connecting to the room
+                room.on('participantConnected', participant => {
+                    console.log('Participant connected:', participant.identity);
+
+                    participant.tracks.forEach(publication => {
+                        if (publication.track) {
+                            document.getElementById('remote-media').appendChild(publication.track.attach());
+                        }
+                    });
+                });
+
+                // Handle leave room
+                document.getElementById('leave-room').addEventListener('click', () => {
+                    room.disconnect();
+                    document.getElementById('room-controls').style.display = 'none';
+                });
+            } catch (error) {
+                console.error('Error connecting to room:', error);
+                alert("An error occurred while connecting to the room.");
+            }
+        }
+    </script>
+</body>
+</html>
